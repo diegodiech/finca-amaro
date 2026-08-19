@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: finca-amaro-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: finca_amaro
+      MYSQL_ROOT_PASSWORD: fincaamaro_root
+      MYSQL_USER: fincaamaro
+      MYSQL_PASSWORD: fincaamaro_dev
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

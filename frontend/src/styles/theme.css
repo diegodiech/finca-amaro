@@ -1,0 +1,62 @@
+:root {
+  --bg: #F6F3E8;
+  --surface: #FBF9F1;
+  --surface-2: #EAE3CD;
+  --ink: #211D14;
+  --ink-muted: #5B5647;
+  --border: #D9D0B4;
+  --pasture: #445C36;
+  --pasture-strong: #2C3D22;
+  --hide: #8B5A34;
+  --bloodline: #9E2B25;
+  --ok: #3E7D4A;
+  --warn: #B5791E;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #14170F;
+    --surface: #1B2015;
+    --surface-2: #232819;
+    --ink: #ECE7D6;
+    --ink-muted: #A9A186;
+    --border: #333A26;
+    --pasture: #8FAE73;
+    --pasture-strong: #B3D08F;
+    --hide: #CE9662;
+    --bloodline: #E2645C;
+    --ok: #6FB57D;
+    --warn: #E0A84A;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #14170F;
+  --surface: #1B2015;
+  --surface-2: #232819;
+  --ink: #ECE7D6;
+  --ink-muted: #A9A186;
+  --border: #333A26;
+  --pasture: #8FAE73;
+  --pasture-strong: #B3D08F;
+  --hide: #CE9662;
+  --bloodline: #E2645C;
+  --ok: #6FB57D;
+  --warn: #E0A84A;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Libre Franklin', ui-sans-serif, system-ui, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+h1, h2, h3 { font-family: 'Fraunces', ui-serif, Georgia, serif; margin: 0; text-wrap: balance; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+a { color: inherit; }
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; font-size: inherit; }
