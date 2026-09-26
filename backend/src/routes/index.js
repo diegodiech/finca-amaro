@@ -12,6 +12,7 @@ const partosController = require('../controllers/partosController');
 const eventosController = require('../controllers/eventosController');
 
 router.get('/razas', razasController.listar);
+router.patch('/razas/:id', razasController.actualizar);
 
 router.get('/potreros', potrerosController.listar);
 router.post('/potreros', potrerosController.crear);

@@ -25,7 +25,7 @@ npm run dev
 ```
 
 - `db:sync` crea las tablas a partir de los modelos (`src/models/*.js`).
-- `db:seed` carga el ejemplo del cuaderno de marca: el cruce de cuatro razas (Amaro 014, hija de Amaro T-05 y Amaro 003), más un puñado de animales para el tablero de corrales. Podés correrlo las veces que quieras, no duplica catálogos.
+- `db:seed` carga el ejemplo de la etapa 1 (línea base Nelore, con Angus entrando solo por inseminación): Amaro 014 es Nelore 3/4 + Angus 1/4, hija de Amaro T-05 y Amaro 003, más un puñado de animales para el tablero de corrales. Podés correrlo las veces que quieras: si los datos ya están, no los duplica.
 - `npm run dev` levanta la API en `http://localhost:4000` con recarga automática (nodemon).
 
 ### 3. Frontend
@@ -61,6 +61,12 @@ frontend/
 Los toros de inseminación externos (semen comprado, el animal no vive en la finca) se cargan igual como un `Animal` con `esExterno: true` — así el árbol genealógico no se corta ahí, aunque el toro nunca haya pisado Finca Amaro.
 
 Cada acción importante (parto, servicio, traslado, vacuna, pesaje) además de guardarse en su propia tabla, deja una fila en `eventos` — es la tabla que alimenta la Bitácora del dashboard, el "muro" de novedades.
+
+## Proyecto por etapas
+
+La pantalla **Líneas** (tabla `razas`, columna `activa`) define qué razas manejás en cada etapa. Etapa 1: solo Nelore. Sumar una línea más adelante (Brangus, Angus puro, criollo…) es activarla ahí: no hay que tocar código. Los formularios solo ofrecen las razas activas, y los animales ya cargados conservan su composición genética completa.
+
+Para seleccionar con datos, los pesajes distinguen el **peso al destete (~205 días)** y guardan la **condición corporal (1-9)**, que conviene medir al final de la época seca.
 
 ## Lo que falta a propósito (para la próxima sesión)
 

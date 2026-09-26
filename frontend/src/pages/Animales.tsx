@@ -124,7 +124,7 @@ function NuevoAnimalForm({
       .catch(() => setError('No pude calcular la sugerencia de razas.'));
   };
 
-  const agregarRaza = () => setComposicion((c) => [...c, { razaId: razas[0]?.id, fraccion: 0 }]);
+  const agregarRaza = () => setComposicion((c) => [...c, { razaId: razas.find((r) => r.activa)?.id ?? razas[0]?.id, fraccion: 0 }]);
   const quitarRaza = (i: number) => setComposicion((c) => c.filter((_, idx) => idx !== i));
   const cambiarRaza = (i: number, campo: 'razaId' | 'fraccion', valor: number) => {
     setComposicion((c) => c.map((r, idx) => (idx === i ? { ...r, [campo]: valor } : r)));
@@ -211,7 +211,9 @@ function NuevoAnimalForm({
         {composicion.map((r, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
             <select value={r.razaId} onChange={(e) => cambiarRaza(i, 'razaId', Number(e.target.value))} style={{ flex: 1, padding: 8, borderRadius: 5, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--ink)' }}>
-              {razas.map((raza) => <option key={raza.id} value={raza.id}>{raza.nombre}</option>)}
+              {razas
+                .filter((raza) => raza.activa || raza.id === r.razaId)
+                .map((raza) => <option key={raza.id} value={raza.id}>{raza.nombre}</option>)}
             </select>
             <input
               type="number" min={0} max={1} step={0.0625} value={r.fraccion}

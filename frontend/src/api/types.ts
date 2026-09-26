@@ -8,6 +8,7 @@ export interface Raza {
   id: number;
   nombre: string;
   origen: 'cebu' | 'taurino' | 'compuesta' | 'criolla';
+  activa: boolean;
 }
 
 export interface RazaConFraccion {
@@ -58,7 +59,11 @@ export interface NodoPedigri {
   padre: NodoPedigri | null;
 }
 
-export interface Pesaje { id: number; animalId: number; fecha: string; pesoKg: number; notas: string | null }
+export interface Pesaje {
+  id: number; animalId: number; fecha: string; pesoKg: number;
+  tipo: 'rutina' | 'nacimiento' | 'destete' | 'otro';
+  condicionCorporal: number | null; notas: string | null;
+}
 export interface Foto {
   id: number; animalId: number; url: string; fecha: string;
   etapa: 'nacimiento' | '15_dias' | '90_dias' | '6_meses' | '1_anio' | 'otro'; notas: string | null;

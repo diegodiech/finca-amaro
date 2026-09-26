@@ -140,6 +140,8 @@ function Pesajes({ animalId, onGuardado }: { animalId: number; onGuardado: () =>
   const [pesajes, setPesajes] = useState<Pesaje[]>([]);
   const [fecha, setFecha] = useState('');
   const [pesoKg, setPesoKg] = useState('');
+  const [tipo, setTipo] = useState<Pesaje['tipo']>('rutina');
+  const [condicion, setCondicion] = useState('');
 
   const cargar = () => api.get<Pesaje[]>(`/animales/${animalId}/pesajes`).then((r) => setPesajes(r.data));
   useEffect(() => { cargar(); }, [animalId]);
@@ -147,23 +149,40 @@ function Pesajes({ animalId, onGuardado }: { animalId: number; onGuardado: () =>
   const agregar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fecha || !pesoKg) return;
-    await api.post(`/animales/${animalId}/pesajes`, { fecha, pesoKg: Number(pesoKg) });
-    setFecha(''); setPesoKg('');
+    await api.post(`/animales/${animalId}/pesajes`, {
+      fecha, pesoKg: Number(pesoKg), tipo, condicionCorporal: condicion ? Number(condicion) : null,
+    });
+    setFecha(''); setPesoKg(''); setCondicion(''); setTipo('rutina');
     cargar(); onGuardado();
   };
 
   return (
     <div className="card">
       <table className="table" style={{ marginBottom: 16 }}>
-        <thead><tr><th>Fecha</th><th>Peso</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Peso</th><th>Condición (1-9)</th></tr></thead>
         <tbody>
-          {pesajes.map((p) => <tr key={p.id}><td className="mono">{p.fecha}</td><td className="mono">{p.pesoKg} kg</td></tr>)}
-          {pesajes.length === 0 && <tr><td colSpan={2} className="empty">Sin pesajes registrados.</td></tr>}
+          {pesajes.map((p) => (
+            <tr key={p.id}>
+              <td className="mono">{p.fecha}</td>
+              <td>{p.tipo}</td>
+              <td className="mono">{p.pesoKg} kg</td>
+              <td className="mono">{p.condicionCorporal ?? '—'}</td>
+            </tr>
+          ))}
+          {pesajes.length === 0 && <tr><td colSpan={4} className="empty">Sin pesajes registrados.</td></tr>}
         </tbody>
       </table>
-      <form onSubmit={agregar} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+      <form onSubmit={agregar} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
         <div className="field"><label>Fecha</label><input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} /></div>
+        <div className="field">
+          <label>Tipo</label>
+          <select value={tipo} onChange={(e) => setTipo(e.target.value as Pesaje['tipo'])}>
+            <option value="rutina">Rutina</option><option value="nacimiento">Nacimiento</option>
+            <option value="destete">Destete (~205 días)</option><option value="otro">Otro</option>
+          </select>
+        </div>
         <div className="field"><label>Peso (kg)</label><input type="number" value={pesoKg} onChange={(e) => setPesoKg(e.target.value)} /></div>
+        <div className="field"><label>Condición (1-9)</label><input type="number" min={1} max={9} step={0.5} value={condicion} onChange={(e) => setCondicion(e.target.value)} /></div>
         <button className="btn" type="submit">+ Registrar</button>
       </form>
     </div>

@@ -2,18 +2,26 @@ const {
   sequelize, Raza, Potrero, Animal, Servicio, Evento,
 } = require('../models');
 
-// Datos de ejemplo: el mismo cruce de cuatro razas del cuaderno de marca,
-// para que la app tenga algo real que mostrar desde el primer arranque.
+// Datos de ejemplo de la etapa 1: línea base Nelore, con Angus entrando solo por inseminación.
+// Amaro 014 sale de Amaro T-05 (Trueno Angus x H-01 Nelore) y Amaro 003 (Rayo Nelore x 001 Nelore)
+// => Nelore 3/4 + Angus 1/4.
 async function main() {
   await sequelize.sync({ alter: true });
 
-  const [angus] = await Raza.findOrCreate({ where: { nombre: 'Angus' }, defaults: { origen: 'taurino' } });
-  const [brahman] = await Raza.findOrCreate({ where: { nombre: 'Brahman' }, defaults: { origen: 'cebu' } });
-  const [nelore] = await Raza.findOrCreate({ where: { nombre: 'Nelore' }, defaults: { origen: 'cebu' } });
-  const [guzerat] = await Raza.findOrCreate({ where: { nombre: 'Guzerat' }, defaults: { origen: 'cebu' } });
-  await Raza.findOrCreate({ where: { nombre: 'Gyr' }, defaults: { origen: 'cebu' } });
-  await Raza.findOrCreate({ where: { nombre: 'Brangus' }, defaults: { origen: 'compuesta' } });
-  await Raza.findOrCreate({ where: { nombre: 'Criollo' }, defaults: { origen: 'criolla' } });
+  const catalogo = [
+    { nombre: 'Nelore', origen: 'cebu', activa: true },
+    { nombre: 'Angus', origen: 'taurino', activa: false },
+    { nombre: 'Brangus', origen: 'compuesta', activa: false },
+    { nombre: 'Brahman', origen: 'cebu', activa: false },
+    { nombre: 'Guzerat', origen: 'cebu', activa: false },
+    { nombre: 'Gyr', origen: 'cebu', activa: false },
+    { nombre: 'Criollo', origen: 'criolla', activa: false },
+  ];
+  const razas = {};
+  for (const r of catalogo) {
+    const [raza] = await Raza.findOrCreate({ where: { nombre: r.nombre }, defaults: r });
+    razas[r.nombre] = raza;
+  }
 
   const potreros = {};
   for (const nombre of ['Maternidad', 'Levante', 'Servicio / IA', 'Preñadas', 'Engorde / Venta']) {
@@ -21,50 +29,47 @@ async function main() {
     potreros[nombre] = p;
   }
 
-  const trueno = await Animal.create({
-    arete: 'IA-TRUENO', nombre: 'Trueno', sexo: 'M', esExterno: true, estado: 'reproductor',
-  });
-  await trueno.setRazas([angus], { through: { fraccion: 1 } });
+  if (await Animal.findOne({ where: { arete: '014' } })) {
+    console.log('Los datos de ejemplo ya estaban cargados.');
+    await sequelize.close();
+    return;
+  }
 
-  const rayo = await Animal.create({
-    arete: 'IA-RAYO', nombre: 'Rayo', sexo: 'M', esExterno: true, estado: 'reproductor',
-  });
-  await rayo.setRazas([brahman], { through: { fraccion: 1 } });
+  const nuevo = async (datos, composicion) => {
+    const animal = await Animal.create(datos);
+    await animal.setRazas(
+      composicion.map(([nombre]) => razas[nombre]),
+      { through: composicion.map(([, fraccion]) => ({ fraccion })) },
+    );
+    return animal;
+  };
 
-  const h01 = await Animal.create({
-    arete: 'H-01', nombre: 'Amaro H-01', sexo: 'H', estado: 'reproductor',
-  });
-  await h01.setRazas([nelore], { through: { fraccion: 1 } });
+  const trueno = await nuevo({ arete: 'IA-TRUENO', nombre: 'Trueno', sexo: 'M', esExterno: true, estado: 'reproductor' }, [['Angus', 1]]);
+  const rayo = await nuevo({ arete: 'IA-RAYO', nombre: 'Rayo', sexo: 'M', esExterno: true, estado: 'reproductor' }, [['Nelore', 1]]);
+  const h01 = await nuevo({ arete: 'H-01', nombre: 'Amaro H-01', sexo: 'H', estado: 'reproductor' }, [['Nelore', 1]]);
+  const amaro001 = await nuevo({ arete: '001', nombre: 'Amaro 001', sexo: 'H', estado: 'reproductor' }, [['Nelore', 1]]);
 
-  const amaro001 = await Animal.create({
-    arete: '001', nombre: 'Amaro 001', sexo: 'H', estado: 'reproductor',
-  });
-  await amaro001.setRazas([guzerat], { through: { fraccion: 1 } });
-
-  const t05 = await Animal.create({
-    arete: 'T-05', nombre: 'Amaro T-05', sexo: 'M', estado: 'reproductor', madreId: h01.id, padreId: trueno.id,
-  });
-  await t05.setRazas([angus, nelore], { through: [{ fraccion: 0.5 }, { fraccion: 0.5 }] });
-
-  const amaro003 = await Animal.create({
-    arete: '003', nombre: 'Amaro 003', sexo: 'H', estado: 'reproductor', madreId: amaro001.id, padreId: rayo.id,
-  });
-  await amaro003.setRazas([brahman, guzerat], { through: [{ fraccion: 0.5 }, { fraccion: 0.5 }] });
-
-  const amaro014 = await Animal.create({
-    arete: '014',
-    nombre: 'Amaro 014',
-    sexo: 'H',
-    estado: 'prenada',
-    madreId: amaro003.id,
-    padreId: t05.id,
-    fechaNacimiento: '2023-06-21',
-    pesoActual: 412,
-    potreroId: potreros['Preñadas'].id,
-  });
-  await amaro014.setRazas(
-    [angus, nelore, brahman, guzerat],
-    { through: [{ fraccion: 0.25 }, { fraccion: 0.25 }, { fraccion: 0.25 }, { fraccion: 0.25 }] },
+  const t05 = await nuevo(
+    { arete: 'T-05', nombre: 'Amaro T-05', sexo: 'M', estado: 'reproductor', madreId: h01.id, padreId: trueno.id },
+    [['Angus', 0.5], ['Nelore', 0.5]],
+  );
+  const amaro003 = await nuevo(
+    { arete: '003', nombre: 'Amaro 003', sexo: 'H', estado: 'reproductor', madreId: amaro001.id, padreId: rayo.id },
+    [['Nelore', 1]],
+  );
+  const amaro014 = await nuevo(
+    {
+      arete: '014',
+      nombre: 'Amaro 014',
+      sexo: 'H',
+      estado: 'prenada',
+      madreId: amaro003.id,
+      padreId: t05.id,
+      fechaNacimiento: '2023-06-21',
+      pesoActual: 412,
+      potreroId: potreros['Preñadas'].id,
+    },
+    [['Nelore', 0.75], ['Angus', 0.25]],
   );
 
   const servicio = await Servicio.create({
@@ -90,18 +95,19 @@ async function main() {
     fecha: servicio.fechaDiagnostico,
   });
 
-  // Un puñado más de animales para poblar el tablero de corrales.
+  // Un puñado más de animales para poblar el tablero de corrales (Nelore puro, sin genealogía cargada).
   const extras = [
-    { arete: '018', nombre: null, sexo: 'H', estado: 'levante', potrero: 'Levante' },
-    { arete: '019', nombre: null, sexo: 'H', estado: 'levante', potrero: 'Levante' },
-    { arete: '020', nombre: null, sexo: 'M', estado: 'levante', potrero: 'Levante' },
-    { arete: '009', nombre: null, sexo: 'H', estado: 'servicio', potrero: 'Servicio / IA' },
-    { arete: '015', nombre: null, sexo: 'M', estado: 'engorde', potrero: 'Engorde / Venta' },
+    { arete: '018', sexo: 'H', estado: 'levante', potrero: 'Levante' },
+    { arete: '019', sexo: 'H', estado: 'levante', potrero: 'Levante' },
+    { arete: '020', sexo: 'M', estado: 'levante', potrero: 'Levante' },
+    { arete: '009', sexo: 'H', estado: 'servicio', potrero: 'Servicio / IA' },
+    { arete: '015', sexo: 'M', estado: 'engorde', potrero: 'Engorde / Venta' },
   ];
   for (const e of extras) {
-    await Animal.create({
-      arete: e.arete, nombre: e.nombre, sexo: e.sexo, estado: e.estado, potreroId: potreros[e.potrero].id,
-    });
+    await nuevo(
+      { arete: e.arete, sexo: e.sexo, estado: e.estado, potreroId: potreros[e.potrero].id },
+      [['Nelore', 1]],
+    );
   }
 
   console.log('Datos de ejemplo cargados.');

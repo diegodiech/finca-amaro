@@ -4,6 +4,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Animales } from './pages/Animales';
 import { AnimalDetalle } from './pages/AnimalDetalle';
 import { Corrales } from './pages/Corrales';
+import { Lineas } from './pages/Lineas';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Bitácora</NavLink>
         <NavLink to="/animales" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Animales</NavLink>
         <NavLink to="/corrales" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Corrales</NavLink>
+        <NavLink to="/lineas" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>Líneas</NavLink>
       </aside>
       <main className="main">
         <Routes>
@@ -26,6 +28,7 @@ export default function App() {
           <Route path="/animales" element={<Animales />} />
           <Route path="/animales/:id" element={<AnimalDetalle />} />
           <Route path="/corrales" element={<Corrales />} />
+          <Route path="/lineas" element={<Lineas />} />
         </Routes>
       </main>
     </div>
