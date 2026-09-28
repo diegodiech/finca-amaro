@@ -6,7 +6,10 @@ const { requireAuth } = require('./middleware/auth');
 
 const app = express();
 
-app.use(cors());
+// En producción solo el sitio real puede llamar a la API. En desarrollo (sin
+// CORS_ORIGIN configurado) queda abierto para no trabar el localhost.
+const origenesPermitidos = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim());
+app.use(cors(origenesPermitidos ? { origin: origenesPermitidos } : {}));
 app.use(express.json());
 
 // Público: Render usa esto para saber que el servicio sigue vivo, y es el paso previo al login.

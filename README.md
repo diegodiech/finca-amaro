@@ -41,7 +41,51 @@ npm install
 npm run dev
 ```
 
-Se abre en `http://localhost:5173` y ya apunta a `http://localhost:4000/api` (configurado en `frontend/.env`).
+Se abre en `http://localhost:5173` y ya apunta a `http://localhost:4000/api` (configurado en `frontend/.env`). La primera vez pide la clave de acceso (`APP_PASSWORD` de `backend/.env`).
+
+## Publicarlo en fincamaro.com
+
+Frontend en **Cloudflare Pages**, backend en **Render**, base en **Aiven** (ya armada) y DNS en **Porkbun** (donde está comprado el dominio, sin migrar nameservers).
+
+### 1. Subir el código a GitHub
+
+```bash
+git remote add origin https://github.com/TU-USUARIO/finca-amaro.git
+git branch -M main
+git push -u origin main
+```
+
+### 2. Backend en Render
+
+1. [render.com](https://render.com) → crear cuenta (sin tarjeta) → **New** → **Web Service** → conectar el repo de GitHub.
+2. **Root Directory**: `backend`. **Build Command**: `npm install`. **Start Command**: `npm start`. Plan **Free**.
+3. En **Environment**, cargar todas las variables de `backend/.env` (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL=true`, `JWT_SECRET`, `APP_PASSWORD`) más `CORS_ORIGIN=https://fincamaro.com,https://www.fincamaro.com`. Render pone `PORT` solo.
+4. **Create Web Service**. Cuando termine el deploy, en **Settings → Custom Domains** agregar `api.fincamaro.com`: Render muestra el registro CNAME exacto para copiar a Porkbun.
+
+### 3. Frontend en Cloudflare Pages
+
+1. [dash.cloudflare.com](https://dash.cloudflare.com) → crear cuenta (sin tarjeta) → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** → el mismo repo.
+2. **Root directory**: `frontend`. **Build command**: `npm run build`. **Build output directory**: `dist`.
+3. Antes de desplegar, en **Environment variables** agregar `VITE_API_URL=https://api.fincamaro.com/api` (Vite la incrusta en el build, así que tiene que estar *antes* del primer deploy).
+4. **Save and Deploy**. Cuando termine, en **Custom domains** agregar `fincamaro.com` y `www.fincamaro.com`: Cloudflare muestra los registros exactos (un ALIAS/CNAME para la raíz y un CNAME para `www`).
+
+### 4. DNS en Porkbun
+
+En el panel de `fincamaro.com` → pestaña **DNS** ([guía de Porkbun](https://kb.porkbun.com/article/231-how-to-add-dns-records-on-porkbun)), agregar los tres registros que Render y Cloudflare fueron mostrando en los pasos anteriores. Van a ser, aproximadamente:
+
+| Tipo | Host | Apunta a |
+|---|---|---|
+| ALIAS | `@` (raíz) | `tu-proyecto.pages.dev` |
+| CNAME | `www` | `tu-proyecto.pages.dev` |
+| CNAME | `api` | lo que indique Render (suele ser el hostname `.onrender.com` del servicio) |
+
+Cloudflare y Render también pueden pedir un registro **TXT** de verificación de dominio — se agrega igual, con el valor exacto que muestre cada uno.
+
+### 5. Confirmar que quedó bien
+
+El SSL y el DNS pueden tardar entre varios minutos y un par de horas. Cuando `https://fincamaro.com` cargue el login y `https://api.fincamaro.com/api/salud` devuelva `{"ok":true}`, ya está en línea. Avisame y lo reviso con vos.
+
+**Dos cosas a tener en cuenta con los planes gratis:** Render duerme el backend a los 15 minutos sin uso (la primera visita después tarda ~50s en responder), y Aiven hace lo mismo con la base tras un tiempo de inactividad — por eso `server.js` reintenta la conexión varias veces al arrancar en vez de rendirse al primer intento.
 
 ## Cómo está armado (para cuando quieras tocarlo vos)
 
@@ -75,6 +119,5 @@ Para seleccionar con datos, los pesajes distinguen el **peso al destete (~205 d�
 
 ## Lo que falta a propósito (para la próxima sesión)
 
-- Autenticación (por ahora la API es abierta, pensada para correr solo en tu máquina).
 - Subida real de fotos (`fotosController` guarda una URL; falta decidir si van a un disco local, S3, o similar).
-- Un formulario para registrar partos desde la UI (el endpoint `POST /api/partos` ya existe y crea la cría automáticamente con su genética calculada, pero todavía no tiene pantalla).
+- La clave de acceso es una sola para toda la finca (no hay usuarios separados) — alcanza para un solo administrador, no para varias personas con permisos distintos.
