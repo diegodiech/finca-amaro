@@ -4,15 +4,20 @@ Trazabilidad genética de ganado vacuno — proyecto final. React + TypeScript e
 
 ## Cómo prender todo, paso a paso
 
-### 1. Base de datos (MySQL en Docker)
+### 1. Base de datos (MySQL gratis en Aiven)
 
-Abrí Docker Desktop manualmente (desde el menú de Windows) y esperá a que el ícono de la ballena quede quieto. Después:
+No hace falta instalar nada. Los pasos:
 
-```bash
-docker compose up -d
-```
+1. Andá a [aiven.io](https://aiven.io/free-mysql-database) y creá una cuenta (con Google, GitHub o email — no pide tarjeta).
+2. En la consola, **Create service** → elegí **MySQL** → plan **Free**.
+3. Elegí una región (cualquiera de AWS o GCP sirve; si no hay una en Sudamérica, la más cercana disponible está bien para desarrollo).
+4. Ponele de nombre `finca-amaro` y creá el servicio. Tarda uno o dos minutos en quedar `Running`.
+5. Entrá al servicio → pestaña **Overview** → ahí están **Host**, **Port**, **User** (`avnadmin`), **Password** y la base por defecto (`defaultdb`).
+6. Copiá esos datos a `backend/.env` (mirá `backend/.env.example` como plantilla) y dejá `DB_SSL=true`.
 
-Eso levanta un MySQL 8 en `localhost:3306` con la base `finca_amaro` ya creada (usuario `fincaamaro` / clave `fincaamaro_dev`, están en `backend/.env`).
+Con eso la base ya existe y queda accesible desde cualquier lado — incluida esta sesión, si me pasás los datos también puedo conectarme yo y probar todo sin que abras nada en tu compu.
+
+*¿Preferís MySQL local en vez de la nube?* `docker-compose.yml` sigue en el proyecto: abrís Docker Desktop y corrés `docker compose up -d`, con `DB_HOST=localhost`, `DB_SSL=false` y las credenciales que ya están en `backend/.env.example`.
 
 ### 2. Backend
 
