@@ -72,6 +72,10 @@ export interface Sanidad {
   id: number; animalId: number; tipo: 'vacuna' | 'tratamiento' | 'desparasitacion';
   producto: string; fecha: string; proximaDosis: string | null; notas: string | null;
 }
+export interface Parto {
+  id: number; servicioId: number | null; madreId: number; criaId: number | null;
+  fechaParto: string; sexoCria: Sexo | null; pesoNacerKg: number | null; observaciones: string | null;
+}
 export interface Movimiento {
   id: number; animalId: number; tipo: 'compra' | 'venta' | 'traslado' | 'muerte' | 'nacimiento';
   fecha: string; origenPotreroId: number | null; destinoPotreroId: number | null;
@@ -82,6 +86,7 @@ export interface Servicio {
   tipo: 'monta_natural' | 'ia'; fechaServicio: string; fechaDiagnostico: string | null;
   resultado: 'pendiente' | 'prenada' | 'vacia'; fechaProbableParto: string | null;
   madre?: AnimalResumen; padre?: AnimalResumen | null;
+  parto?: { id: number; fechaParto: string; criaId: number | null } | null;
 }
 
 export interface Evento {

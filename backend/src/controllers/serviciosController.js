@@ -1,5 +1,5 @@
 const {
-  Servicio, Animal, Evento,
+  Servicio, Animal, Evento, Parto,
 } = require('../models');
 
 exports.listar = async (req, res) => {
@@ -7,7 +7,11 @@ exports.listar = async (req, res) => {
   const where = madreId ? { madreId } : {};
   const servicios = await Servicio.findAll({
     where,
-    include: [{ model: Animal, as: 'madre', attributes: ['id', 'arete', 'nombre'] }, { model: Animal, as: 'padre', attributes: ['id', 'arete', 'nombre'] }],
+    include: [
+      { model: Animal, as: 'madre', attributes: ['id', 'arete', 'nombre'] },
+      { model: Animal, as: 'padre', attributes: ['id', 'arete', 'nombre'] },
+      { model: Parto, as: 'parto', attributes: ['id', 'fechaParto', 'criaId'] },
+    ],
     order: [['fechaServicio', 'DESC']],
   });
   res.json(servicios);

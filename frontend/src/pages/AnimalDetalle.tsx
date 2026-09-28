@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import type {
-  Animal, Foto, Movimiento, NodoPedigri, Pesaje, Sanidad, Servicio,
+  Animal, Foto, Movimiento, NodoPedigri, Pesaje, Potrero, Sanidad, Servicio,
 } from '../api/types';
 import { EstadoPill } from '../components/EstadoPill';
 import { BreedBar } from '../components/BreedBar';
@@ -235,6 +235,7 @@ function Reproduccion({ animal, onCambio }: { animal: Animal; onCambio: () => vo
   const [tipo, setTipo] = useState<'monta_natural' | 'ia'>('ia');
   const [semenToro, setSemenToro] = useState('');
   const [fechaServicio, setFechaServicio] = useState('');
+  const [partoAbierto, setPartoAbierto] = useState<number | null>(null);
 
   const cargar = () => api.get<Servicio[]>('/servicios', { params: { madreId: animal.id } }).then((r) => setServicios(r.data));
   useEffect(() => { cargar(); }, [animal.id]);
@@ -282,12 +283,32 @@ function Reproduccion({ animal, onCambio }: { animal: Animal; onCambio: () => vo
                     <button className="btn secondary" onClick={() => diagnosticar(s.id, 'vacia')}>Vacía</button>
                   </div>
                 )}
+                {s.resultado === 'prenada' && !s.parto && (
+                  <button className="btn secondary" onClick={() => setPartoAbierto(partoAbierto === s.id ? null : s.id)}>
+                    {partoAbierto === s.id ? 'Cancelar' : 'Registrar parto'}
+                  </button>
+                )}
+                {s.parto && (
+                  <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
+                    Parió el {s.parto.fechaParto}
+                    {s.parto.criaId && <> · <Link to={`/animales/${s.parto.criaId}`}>ver cría</Link></>}
+                  </span>
+                )}
               </td>
             </tr>
           ))}
           {servicios.length === 0 && <tr><td colSpan={6} className="empty">Sin servicios registrados.</td></tr>}
         </tbody>
       </table>
+
+      {partoAbierto !== null && (
+        <FormularioParto
+          servicio={servicios.find((s) => s.id === partoAbierto)!}
+          madreId={animal.id}
+          onListo={() => { setPartoAbierto(null); cargar(); onCambio(); }}
+        />
+      )}
+
       <form onSubmit={registrarServicio} style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
         <div className="field">
           <label>Tipo</label>
@@ -300,6 +321,75 @@ function Reproduccion({ animal, onCambio }: { animal: Animal; onCambio: () => vo
         <button className="btn" type="submit">+ Registrar servicio</button>
       </form>
     </div>
+  );
+}
+
+function FormularioParto({
+  servicio, madreId, onListo,
+}: { servicio: Servicio; madreId: number; onListo: () => void }) {
+  const [fechaParto, setFechaParto] = useState('');
+  const [sexoCria, setSexoCria] = useState<'M' | 'H'>('H');
+  const [criaArete, setCriaArete] = useState('');
+  const [pesoNacerKg, setPesoNacerKg] = useState('');
+  const [potreroId, setPotreroId] = useState('');
+  const [potreros, setPotreros] = useState<Potrero[]>([]);
+  const [error, setError] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => { api.get<Potrero[]>('/potreros').then((r) => setPotreros(r.data)); }, []);
+
+  const enviar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fechaParto || !criaArete) { setError('La fecha de parto y el arete de la cría son obligatorios.'); return; }
+    setEnviando(true);
+    setError('');
+    try {
+      await api.post('/partos', {
+        servicioId: servicio.id,
+        madreId,
+        fechaParto,
+        sexoCria,
+        criaArete,
+        pesoNacerKg: pesoNacerKg ? Number(pesoNacerKg) : null,
+        potreroId: potreroId || null,
+      });
+      onListo();
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'No se pudo registrar el parto.');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <form onSubmit={enviar} className="card" style={{ marginBottom: 16, background: 'var(--surface-2)' }}>
+      <p style={{ fontSize: 13, color: 'var(--ink-muted)', marginBottom: 12 }}>
+        La cría se crea con la genética calculada automáticamente a partir de {servicio.madre ? `#${servicio.madre.arete}` : 'la madre'}
+        {' '}y {servicio.padre ? `#${servicio.padre.arete}` : servicio.semenToro || 'el padre'}.
+      </p>
+      {error && <div className="error-box">{error}</div>}
+      <div className="form-grid">
+        <div className="field"><label>Fecha de parto</label><input type="date" value={fechaParto} onChange={(e) => setFechaParto(e.target.value)} /></div>
+        <div className="field"><label>Arete de la cría</label><input value={criaArete} onChange={(e) => setCriaArete(e.target.value)} placeholder="p. ej. 025" /></div>
+        <div className="field">
+          <label>Sexo</label>
+          <select value={sexoCria} onChange={(e) => setSexoCria(e.target.value as 'M' | 'H')}>
+            <option value="H">Hembra</option><option value="M">Macho</option>
+          </select>
+        </div>
+        <div className="field"><label>Peso al nacer (kg)</label><input type="number" value={pesoNacerKg} onChange={(e) => setPesoNacerKg(e.target.value)} /></div>
+        <div className="field">
+          <label>Potrero de la cría</label>
+          <select value={potreroId} onChange={(e) => setPotreroId(e.target.value)}>
+            <option value="">— sin asignar —</option>
+            {potreros.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+          </select>
+        </div>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        <button className="btn" type="submit" disabled={enviando}>{enviando ? 'Guardando…' : 'Registrar nacimiento'}</button>
+      </div>
+    </form>
   );
 }
 
