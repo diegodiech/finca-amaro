@@ -1,7 +1,7 @@
 const {
-  Parto, Animal, Servicio, Raza, Evento,
+  Parto, Animal, Servicio, Raza, Evento, AnimalRaza,
 } = require('../models');
-const { calcularComposicion } = require('../utils/genetica');
+const { calcularComposicion, fijarComposicion } = require('../utils/genetica');
 
 exports.crear = async (req, res) => {
   const {
@@ -32,7 +32,7 @@ exports.crear = async (req, res) => {
   const [razasMadre, razasPadre] = await Promise.all([cargarRazas(madreId), cargarRazas(padreId)]);
   const composicion = calcularComposicion(razasMadre, razasPadre);
   if (composicion.length) {
-    await cria.setRazas(composicion.map((c) => c.razaId), { through: composicion.map((c) => ({ fraccion: c.fraccion })) });
+    await fijarComposicion(AnimalRaza, cria.id, composicion);
   }
 
   const parto = await Parto.create({

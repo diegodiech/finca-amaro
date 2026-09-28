@@ -1,8 +1,8 @@
 const { Op } = require('sequelize');
 const {
-  Animal, Raza, Potrero, Evento,
+  Animal, Raza, Potrero, Evento, AnimalRaza,
 } = require('../models');
-const { calcularComposicion } = require('../utils/genetica');
+const { calcularComposicion, fijarComposicion } = require('../utils/genetica');
 
 const incluirRelaciones = [
   { model: Raza, as: 'razas', through: { attributes: ['fraccion'] } },
@@ -45,10 +45,7 @@ exports.crear = async (req, res) => {
   });
 
   if (Array.isArray(razas) && razas.length) {
-    await animal.setRazas(
-      razas.map((r) => r.razaId),
-      { through: razas.map((r) => ({ fraccion: r.fraccion })) },
-    );
+    await fijarComposicion(AnimalRaza, animal.id, razas);
   }
 
   await Evento.create({
@@ -74,10 +71,7 @@ exports.actualizar = async (req, res) => {
   });
 
   if (Array.isArray(razas)) {
-    await animal.setRazas(
-      razas.map((r) => r.razaId),
-      { through: razas.map((r) => ({ fraccion: r.fraccion })) },
-    );
+    await fijarComposicion(AnimalRaza, animal.id, razas);
   }
 
   const completo = await Animal.findByPk(animal.id, { include: incluirRelaciones });

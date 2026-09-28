@@ -17,4 +17,18 @@ function calcularComposicion(razasMadre = [], razasPadre = []) {
   }));
 }
 
-module.exports = { calcularComposicion };
+// Reemplaza la composición genética de un animal en la tabla animal_razas.
+// Se maneja "a mano" (borrar + insertar) en vez de usar el setter automático de Sequelize
+// porque ese setter no acepta un valor de "fraccion" distinto por cada raza.
+async function fijarComposicion(AnimalRaza, animalId, composicion, transaction) {
+  await AnimalRaza.destroy({ where: { animalId }, transaction });
+  const filas = composicion.filter((c) => c.razaId && c.fraccion > 0);
+  if (filas.length) {
+    await AnimalRaza.bulkCreate(
+      filas.map((c) => ({ animalId, razaId: c.razaId, fraccion: c.fraccion })),
+      { transaction },
+    );
+  }
+}
+
+module.exports = { calcularComposicion, fijarComposicion };
